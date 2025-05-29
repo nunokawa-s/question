@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<div th:replace="~{fragment :: meta}"></div>
+	<div th:replace="~{fragment :: styles}"></div>
+	<title>店舗編集</title>
+</head>
+
+<body>
+	<div class="nagoyameshi-wrapper">
+		<div th:replace="~{fragment :: header}"></div>
+
+		<main>
+			<div class="container pt-4 pb-5 nagoyameshi-container">
+				<div class="row justify-content-center">
+					<div class="col-xl-5 col-lg-6 col-md-8">
+						<nav class="mb-4" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+							<ol class="breadcrumb mb-0">
+								<li class="breadcrumb-item"><a th:href="@{/admin/shops}">店舗一覧</a></li>
+								<li class="breadcrumb-item active" aria-current="page">店舗編集</li>
+							</ol>
+						</nav>
+
+						<h1 class="mb-4 text-center">店舗編集</h1>
+
+						<div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}">
+						</div>
+
+
+						<form method="post" th:action="@{/admin/shops/{id}/update(id=${shopEditForm.id})}"
+							th:object="${shopEditForm}" enctype="multipart/form-data" id="shopEditForm">
+							<input type="hidden" th:field="*{id}">
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="name" class="col-form-label text-md-left fw-bold">店舗名</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('name')}" class="text-danger small mb-2"
+										th:errors="*{name}"></div>
+									<input type="text" class="form-control" th:field="*{name}" autofocus>
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label class="col-form-label text-md-left fw-bold">カテゴリー</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('categoryIds')}" class="text-danger small mb-2"
+										th:errors="*{categoryIds}"></div>
+									<div th:each="category : ${categories}" class="form-check">
+										<input type="checkbox" class="form-check-input" th:field="*{categoryIds}"
+											th:value="${category.id}" th:id="'category_' + ${category.id}"
+											th:checked="${#lists.contains(shopEditForm.categoryIds, category.id)}">
+										<label class="form-check-label" th:for="'category_' + ${category.id}"
+											th:text="${category.name}"></label>
+									</div>
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="imageFile" class="col-form-label text-md-left fw-bold">店舗画像</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('imageFile')}" class="text-danger small mb-2"
+										th:errors="*{imageFile}"></div>
+									<input type="file" class="form-control" th:field="*{imageFile}">
+									<div th:if="${imageName}" class="mt-2">
+										現在の画像: <img th:src="@{/storage/{imageName}(imageName=${imageName})}" alt="現在の画像"
+											style="max-width: 100px;">
+									</div>
+								</div>
+							</div>
+
+							<div class="row" id="imagePreview"></div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="description" class="col-form-label text-md-left fw-bold">説明</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('description')}" class="text-danger small mb-2"
+										th:errors="*{description}"></div>
+									<textarea class="form-control" th:field="*{description}" cols="30"
+										rows="5"></textarea>
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="price" class="col-form-label text-md-left fw-bold">平均価格（単位：円）</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('price')}" class="text-danger small mb-2"
+										th:errors="*{price}"></div>
+									<input type="number" class="form-control" th:field="*{price}">
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="capacity" class="col-form-label text-md-left fw-bold">定員（単位：人）</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('capacity')}" class="text-danger small mb-2"
+										th:errors="*{capacity}"></div>
+									<input type="number" class="form-control" th:field="*{capacity}">
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="postalCode" class="col-form-label text-md-left fw-bold">郵便番号</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('postalCode')}" class="text-danger small mb-2"
+										th:errors="*{postalCode}"></div>
+									<div class="d-flex align-items-center">
+										<input type="text" class="form-control form-control-sm w-25"
+											id="postalCodeFirstEdit" maxlength="3"
+											oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3); updatePostalCodeEdit();"
+											th:value="${#strings.length(shopEditForm.postalCode) >= 3 ? #strings.substring(shopEditForm.postalCode, 0, 3) : ''}">
+										<span class="mx-2">ー</span>
+										<input type="text" class="form-control form-control-sm w-25"
+											id="postalCodeSecondEdit" maxlength="4"
+											oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); updatePostalCodeEdit();"
+											th:value="${#strings.length(shopEditForm.postalCode) >= 7 ? #strings.substring(shopEditForm.postalCode, 3, 7) : ''}">
+										<input type="hidden" th:field="*{postalCode}" id="postalCodeEdit">
+									</div>
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="address" class="col-form-label text-md-left fw-bold">住所</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('address')}" class="text-danger small mb-2"
+										th:errors="*{address}"></div>
+									<input type="text" class="form-control" th:field="*{address}">
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label for="phoneNumber" class="col-form-label text-md-left fw-bold">電話番号</label>
+								</div>
+								<div class="col-md-8">
+									<div th:if="${#fields.hasErrors('phoneNumber')}" class="text-danger small mb-2"
+										th:errors="*{phoneNumber}"></div>
+									<div class="d-flex align-items-center">
+										<input type="text" class="form-control form-control-sm w-25" id="phoneFirstEdit"
+											maxlength="4"
+											oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); updatePhoneNumberEdit();"
+											th:value="${#strings.length(shopEditForm.phoneNumber) >= 4 ? #strings.substring(shopEditForm.phoneNumber, 0, 4) : ''}">
+										<span class="mx-2">ー</span>
+										<input type="text" class="form-control form-control-sm w-25"
+											id="phoneSecondEdit" maxlength="4"
+											oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); updatePhoneNumberEdit();"
+											th:value="${#strings.length(shopEditForm.phoneNumber) >= 8 ? #strings.substring(shopEditForm.phoneNumber, 4, 8) : ''}">
+										<span class="mx-2">ー</span>
+										<input type="text" class="form-control form-control-sm w-25" id="phoneThirdEdit"
+											maxlength="4"
+											oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); updatePhoneNumberEdit();"
+											th:value="${#strings.length(shopEditForm.phoneNumber) >= 12 ? #strings.substring(shopEditForm.phoneNumber, 8, 12) : (#strings.length(shopEditForm.phoneNumber) >= 11 ? #strings.substring(shopEditForm.phoneNumber, 7, 11) : '')}">
+										<input type="hidden" th:field="*{phoneNumber}" id="phoneNumberEdit">
+									</div>
+								</div>
+							</div>
+
+							<div class="form-group row mb-3">
+								<div class="col-md-4">
+									<label class="col-form-label text-md-left fw-bold">営業時間</label>
+								</div>
+								<div class="col-md-8">
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">月曜日</label>
+										<div th:if="${#fields.hasErrors('mondayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{mondayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="mondayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="mondayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('monday', 'opening'); updateOpeningHours('monday');"
+												th:value="${shopEditForm.mondayOpeningHours != null and #strings.length(shopEditForm.mondayOpeningHours) == 4 ? #strings.substring(shopEditForm.mondayOpeningHours, 0, 2) : ''}">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="mondayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('monday', 'opening'); updateOpeningHours('monday');"
+												th:value="${shopEditForm.mondayOpeningHours != null and #strings.length(shopEditForm.mondayOpeningHours) == 4 ? #strings.substring(shopEditForm.mondayOpeningHours, 2, 4) : ''}">
+											<input type="hidden" th:field="*{mondayOpeningHours}"
+												id="mondayOpeningHours">
+											<div id="mondayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('mondayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{mondayClosingHours}"></div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="mondayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="mondayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('monday', 'closing'); updateClosingHours('monday');"
+												th:value="${shopEditForm.mondayClosingHours != null and #strings.length(shopEditForm.mondayClosingHours) == 4 ? #strings.substring(shopEditForm.mondayClosingHours, 0, 2) : ''}">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="mondayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('monday', 'closing'); updateClosingHours('monday');"
+												th:value="${shopEditForm.mondayClosingHours != null and #strings.length(shopEditForm.mondayClosingHours) == 4 ? #strings.substring(shopEditForm.mondayClosingHours, 2, 4) : ''}">
+											<input type="hidden" th:field="*{mondayClosingHours}"
+												id="mondayClosingHours">
+											<div id="mondayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">火曜日</label>
+										<div th:if="${#fields.hasErrors('tuesdayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{tuesdayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="tuesdayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="tuesdayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('tuesday', 'opening'); updateOpeningHours('tuesday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="tuesdayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('tuesday', 'opening'); updateOpeningHours('tuesday');">
+											<input type="hidden" th:field="*{tuesdayOpeningHours}"
+												id="tuesdayOpeningHours">
+											<div id="tuesdayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('tuesdayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{tuesdayClosingHours}">
+										</div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="tuesdayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="tuesdayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('tuesday', 'closing'); updateClosingHours('tuesday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="tuesdayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('tuesday', 'closing'); updateClosingHours('tuesday');">
+											<input type="hidden" th:field="*{tuesdayClosingHours}"
+												id="tuesdayClosingHours">
+											<div id="tuesdayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">水曜日</label>
+										<div th:if="${#fields.hasErrors('wednesdayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{wednesdayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="wednesdayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="wednesdayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('wednesday', 'opening'); updateOpeningHours('wednesday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="wednesdayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('wednesday', 'opening'); updateOpeningHours('wednesday');">
+											<input type="hidden" th:field="*{wednesdayOpeningHours}"
+												id="wednesdayOpeningHours">
+											<div id="wednesdayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('wednesdayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{wednesdayClosingHours}">
+										</div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="wednesdayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="wednesdayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('wednesday', 'closing'); updateClosingHours('wednesday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="wednesdayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('wednesday', 'closing'); updateClosingHours('wednesday');">
+											<input type="hidden" th:field="*{wednesdayClosingHours}"
+												id="wednesdayClosingHours">
+											<div id="wednesdayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">木曜日</label>
+										<div th:if="${#fields.hasErrors('thursdayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{thursdayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="thursdayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="thursdayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('thursday', 'opening'); updateOpeningHours('thursday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="thursdayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('thursday', 'opening'); updateOpeningHours('thursday');">
+											<input type="hidden" th:field="*{thursdayOpeningHours}"
+												id="thursdayOpeningHours">
+											<div id="thursdayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('thursdayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{thursdayClosingHours}">
+										</div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="thursdayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="thursdayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('thursday', 'closing'); updateClosingHours('thursday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="thursdayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('thursday', 'closing'); updateClosingHours('thursday');">
+											<input type="hidden" th:field="*{thursdayClosingHours}"
+												id="thursdayClosingHours">
+											<div id="thursdayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">金曜日</label>
+										<div th:if="${#fields.hasErrors('fridayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{fridayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="fridayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="fridayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('friday', 'opening'); updateOpeningHours('friday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="fridayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('friday', 'opening'); updateOpeningHours('friday');">
+											<input type="hidden" th:field="*{fridayOpeningHours}"
+												id="fridayOpeningHours">
+											<div id="fridayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('fridayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{fridayClosingHours}"></div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="fridayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="fridayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('friday', 'closing'); updateClosingHours('friday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="fridayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('friday', 'closing'); updateClosingHours('friday');">
+											<input type="hidden" th:field="*{fridayClosingHours}"
+												id="fridayClosingHours">
+											<div id="fridayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">土曜日</label>
+										<div th:if="${#fields.hasErrors('saturdayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{saturdayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="saturdayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="saturdayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('saturday', 'opening'); updateOpeningHours('saturday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="saturdayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('saturday', 'opening'); updateOpeningHours('saturday');">
+											<input type="hidden" th:field="*{saturdayOpeningHours}"
+												id="saturdayOpeningHours">
+											<div id="saturdayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('saturdayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{saturdayClosingHours}">
+										</div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="saturdayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="saturdayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('saturday', 'closing'); updateClosingHours('saturday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="saturdayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('saturday', 'closing'); updateClosingHours('saturday');">
+											<input type="hidden" th:field="*{saturdayClosingHours}"
+												id="saturdayClosingHours">
+											<div id="saturdayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+
+									<div class="mb-2">
+										<label class="col-form-label text-md-left fw-bold d-block">日曜日</label>
+										<div th:if="${#fields.hasErrors('sundayOpeningHours')}"
+											class="text-danger small mb-1" th:errors="*{sundayOpeningHours}"></div>
+										<div class="d-flex align-items-center">
+											<label for="sundayOpeningHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">開始時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="sundayOpeningHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('sunday', 'opening'); updateOpeningHours('sunday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="sundayOpeningHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('sunday', 'opening'); updateOpeningHours('sunday');">
+											<input type="hidden" th:field="*{sundayOpeningHours}"
+												id="sundayOpeningHours">
+											<div id="sundayOpeningHoursError" class="text-danger small ms-2"></div>
+										</div>
+										<div th:if="${#fields.hasErrors('sundayClosingHours')}"
+											class="text-danger small mb-1 mt-2" th:errors="*{sundayClosingHours}"></div>
+										<div class="d-flex align-items-center mt-2">
+											<label for="sundayClosingHoursFirst"
+												class="col-form-label-sm text-md-left fw-bold me-2">閉店時間</label>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="sundayClosingHoursFirst" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('sunday', 'closing'); updateClosingHours('sunday');">
+											<span class="mx-1">：</span>
+											<input type="text" class="form-control form-control-sm d-inline-block w-25"
+												id="sundayClosingHoursSecond" maxlength="2"
+												oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); validateTimeInput('sunday', 'closing'); updateClosingHours('sunday');">
+											<input type="hidden" th:field="*{sundayClosingHours}"
+												id="sundayClosingHours">
+											<div id="sundayClosingHoursError" class="text-danger small ms-2"></div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+							<div class=" form-group d-flex justify-content-center my-4">
+								<button type="submit" class="btn text-white shadow-sm w-50 nagoyameshi-btn">更新</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<div th:replace="~{fragment :: footer}"></div>
+	</div>
+
+	<div th:replace="~{fragment :: scripts}"></div>
+	<script th:src="@{/js/preview.js}"></script>
+	<script th:src="@{/js/shop-form.js}"></script>
+	<script th:src="@{/js/shop-input-format.js}"></script>
+
+</body>
+
+</html>

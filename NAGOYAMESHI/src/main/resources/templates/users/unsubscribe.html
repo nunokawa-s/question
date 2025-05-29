@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <div th:replace="~{fragment :: meta}"></div>
+    <div th:replace="~{fragment :: styles}"></div>
+    <title>退会手続き</title> 
+
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+
+<body>
+    <div class="nagoyameshi-wrapper">
+        <div th:replace="~{fragment :: header}"></div>
+
+        <main>
+            <div class="container nagoyameshi-container pb-5">
+                <div class="row justify-content-center">
+                    <div class="col-xl-5 col-lg-6 col-md-8">
+                        <nav class="my-3" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a th:href="@{/}">ホーム</a></li>
+                                <li class="breadcrumb-item"><a th:href="@{/user}">会員情報</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">退会手続き</li>
+                            </ol>
+                        </nav>
+
+                        <h1 class="mb-3 text-center">退会手続き</h1>
+
+                        <div class="text-center mb-4">
+                            <p th:text="${user.name} + 'さんの退会手続きページです。'"></p>
+                            <p>このページでは、有料会員のサブスクリプションを管理できます。</p>
+                            <p>解約をご希望の場合は、Stripeの顧客ポータルへアクセスしてください。</p>
+
+                            <div th:if="${user.paidFlg}"> 
+                                <p class="lead fw-bold text-success">あなたは現在、NAGOYAMESHIの有料会員です。</p>
+                                <p>サブスクリプションの内容確認や解約は、以下のボタンからStripeの顧客ポータルで行えます。</p>
+                                <div class="d-flex justify-content-center mt-4">
+                                    <button class="btn btn-primary text-white shadow-sm w-75" id="manageSubscriptionButton">
+                                        サブスクリプションを管理する (Stripeへ移動)
+                                    </button>
+                                </div>
+                            </div>
+                            <div th:unless="${user.paidFlg}"> 
+                                <p class="lead fw-bold text-info">あなたは現在、無料会員です。</p>
+                                <p>有料会員に登録して、NAGOYAMESHIのすべてのサービスをご利用いただけます。</p>
+                                <div class="d-flex justify-content-center mt-4">
+                                    <a th:href="@{/user/subscribe}" class="btn btn-secondary text-white shadow-sm w-75">
+                                        有料会員に登録する
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div th:replace="~{fragment :: footer}"></div>
+    </div>
+
+    <div th:replace="~{fragment :: scripts}"></div>
+
+    <script th:src="@{/js/manage_subscription.js}"></script> 
+</body>
+
+</html>

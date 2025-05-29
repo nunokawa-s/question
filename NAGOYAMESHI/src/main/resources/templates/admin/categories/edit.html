@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+    <div th:replace="~{fragment :: meta}"></div>
+    <div th:replace="~{fragment :: styles}"></div>
+    <title>カテゴリ編集</title>
+</head>
+<body>
+<div class="nagoyameshi-wrapper">
+    <div th:replace="~{fragment :: header}"></div>
+    <main class="container pt-4 pb-5 nagoyameshi-container">
+        <nav class="mb-4" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a th:href="@{/admin/categories}">カテゴリ一覧</a></li>
+                <li class="breadcrumb-item active" aria-current="page">カテゴリ編集</li>
+            </ol>
+        </nav>
+        <h1 class="mb-4">カテゴリ編集</h1>
+        <form method="post" th:action="@{/admin/categories/{id}/edit(id=${categoryForm.id})}" th:object="${categoryForm}">
+            <input type="hidden" th:field="*{id}">
+            <div class="form-group mb-3">
+                <label for="name" class="form-label fw-bold">カテゴリ名</label>
+                <input type="text" class="form-control" id="name" th:field="*{name}" th:classappend="${#fields.hasErrors('name') ? 'is-invalid' : ''}">
+                <div th:if="${#fields.hasErrors('name')}" class="invalid-feedback" th:errors="*{name}"></div>
+            </div>
+            <button type="submit" class="btn nagoyameshi-btn text-white shadow-sm">更新</button>
+        </form>
+    </main>
+    <div th:replace="~{fragment :: footer}"></div>
+</div>
+<div th:replace="~{fragment :: scripts}"></div>
+</body>
+</html>
